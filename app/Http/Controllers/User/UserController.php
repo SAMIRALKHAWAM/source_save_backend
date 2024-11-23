@@ -31,11 +31,11 @@ class UserController extends BaseCRUDController
     public function Login(UserLoginRequest $request)
     {
         $arr = Arr::only($request->validated(), ['email', 'password']);
-        $user = $this->service->getAll(['email' => $arr['email']])->first();
+        $user = User::where('email', $arr['email'])->first();
         if (!$user || !Hash::check($arr['password'], $user->password)) {
             throw ValidationException::withMessages(['email or password not match']);
         }
-        $user['token'] = $user->createToken('authToken', ['user'])->accessToken;
+        $user['token'] = $user->crateToken('authToken', ['user'])->accessToken;
         return \SuccessData('user Login Successfully', $user);
     }
 
