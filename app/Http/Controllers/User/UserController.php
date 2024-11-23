@@ -35,7 +35,7 @@ class UserController extends BaseCRUDController
         if (!$user || !Hash::check($arr['password'], $user->password)) {
             throw ValidationException::withMessages(['email or password not match']);
         }
-        $user['token'] = $user->crateToken('authToken', ['user'])->accessToken;
+        $user['token'] = $user->createToken('authToken', ['user'])->accessToken;
         return \SuccessData('user Login Successfully', $user);
     }
 
