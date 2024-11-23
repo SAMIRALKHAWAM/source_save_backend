@@ -53,6 +53,7 @@ class UserController extends BaseCRUDController
         if (Hash::check($arr['code'], $user->Code?->code) && \now()->between($user->Code?->from_date_time, $user->Code?->to_date_time)) {
             $user->update(['email_verified_at' => \now()]);
             $user->Code()->delete();
+            unset($user->Code);
             $user['token'] = $user->createToken('authToken', ['user'])->accessToken;
             return \SuccessData('Email verified successfully', $user);
         }
@@ -75,6 +76,7 @@ class UserController extends BaseCRUDController
         if (Hash::check($arr['code'], $user->Code?->code) && \now()->between($user->Code?->from_date_time, $user->Code?->to_date_time)) {
             $user->update(['password' => $arr['password']]);
             $user->Code()->delete();
+            unset($user->Code);
             return \Success('Password Changed successfully');
         }
         throw ValidationException::withMessages(['Code Wrong Or Expired']);
