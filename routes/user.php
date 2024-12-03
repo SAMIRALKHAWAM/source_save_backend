@@ -26,4 +26,8 @@ Route::group(['middleware' => ['auth:user', 'scope:user']], function () {
     Route::get('/get_permissions', [PermissionController::class, 'index']);
 
     Route::get('/get_users', [UserController::class, 'index']);
+
+    Route::get('/get_groups',[GroupController::class,'index']);
+    Route::get('/get_group_users',[GroupController::class,'GetGroupUsers']);
+    Route::get('/get_group_permissions',[GroupController::class,'GetGroupPermissions']);
 });

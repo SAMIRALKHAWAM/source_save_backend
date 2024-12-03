@@ -31,6 +31,13 @@ class GroupService extends BaseService
 
         $request = app(GetGroupsRequest::class);
         $arr = Arr::only($request->validated(), ['status']);
+        if (\request()->route()->getPrefix() == 'user_api') {
+            $user = \auth('user')->user();
+            $groups = Group::whereHas('GroupUsers', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })->get();
+            return $groups;
+        }
         if (!empty($arr['status'])) {
             if ($arr['status'] == GroupStatusEnum::PENDING) {
                 $where = [
