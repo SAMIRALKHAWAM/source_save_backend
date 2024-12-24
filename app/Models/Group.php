@@ -54,7 +54,6 @@ class Group extends Model
         if (\request()->route()->getPrefix() == 'user_api') {
             $userId = \auth('user')->user()->id;
             $groupAdminId = $this->GroupUsers()->where('is_admin',1)->first()?->user_id;
-
             return $userId == $groupAdminId;
         }
         return false;

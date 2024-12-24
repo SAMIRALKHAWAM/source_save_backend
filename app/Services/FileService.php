@@ -59,7 +59,7 @@ class FileService extends BaseService
                 throw new AccessDeniedHttpException('Access Denied : Dont Have Permission');
             }
         }
-        return \SuccessData('Files Found Successfully', $files->get());
+       return $files->get();
     }
 
 }

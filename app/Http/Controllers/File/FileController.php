@@ -19,6 +19,7 @@ use App\Services\FileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Role;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class FileController extends BaseCRUDController
@@ -55,13 +56,17 @@ class FileController extends BaseCRUDController
     {
         $user = \auth('user')->user();
         $arr = Arr::only($request->validated(), ['group_id', 'files']);
-        $files = File::whereIn('id', $arr['files'])->update(['availability' => FileStatusEnum::UNAVAILABLE, 'reserved_by' => $user->id]);
-        foreach ($arr['files'] as $file) {
-            $fileName = 'logs/file_logs/file_' . $file . '.log';
-            $content = "File Reserved By $user->name \n";
-            Storage::append($fileName, $content);
+        $group_Admin = Group::GroupAdmin($arr['group_id']);
+        if ($group_Admin->user_id == $user->id ||  $user->hasPermissionTo('Edit_File')) {
+            File::whereIn('id', $arr['files'])->update(['availability' => FileStatusEnum::UNAVAILABLE, 'reserved_by' => $user->id]);
+            foreach ($arr['files'] as $file) {
+                $fileName = 'logs/file_logs/file_' . $file . '.log';
+                $content = "File Reserved By $user->name \n";
+                Storage::append($fileName, $content);
+            }
+            return \Success('Done Check In Files');
         }
-        return \Success('Done Check In Files');
+        throw new AccessDeniedHttpException('Access Denied : Dont Have Permission');
     }
 
 
@@ -87,18 +92,20 @@ class FileController extends BaseCRUDController
                 'size_MB' => $file->size_MB,
                 'url' => $file->url,
             ];
-            OldFile::create($old_file_arr);
-            $file->delete();
+            $oldFile = OldFile::create($old_file_arr);
             $path = 'Files/';
-            $uploadFile = \uploadFile($arr['url'], $file->name, $path);
+            $uploadFile = \uploadFile($arr['url'], '(' . $oldFile->id . ')' . $file->name, $path);
             $new_file_arr = [
                 'group_user_id' => $new_group_user_id,
                 'name' => $file->name,
                 'description' => $file->description,
                 'size_MB' => number_format(Storage::size('public/' . $uploadFile['url']) / 1024 / 1024, 2),
                 'url' => Storage::url('public/' . $uploadFile['url']),
+                'reserved_by' => null,
+                'availability' => FileStatusEnum::AVAILABLE,
+                'status' => GroupStatusEnum::ACCEPTED,
             ];
-            File::create($new_file_arr);
+            $file->update($new_file_arr);
         } else {
             $file->update([
                 'availability' => FileStatusEnum::AVAILABLE,
