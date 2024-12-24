@@ -8,11 +8,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Group\ChangeStatusGroupRequest;
 use App\Http\Requests\Group\CreateGroupRequest;
 use App\Http\Requests\Group\GroupIdRequest;
+use App\Http\Requests\Group\LeaveGroupRequest;
+use App\Models\Group;
 use App\Services\GroupService;
 use App\Services\RoleService;
+use Dotenv\Exception\ValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Spatie\Permission\Models\Role;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class GroupController extends BaseCRUDController
 {
@@ -59,6 +63,19 @@ class GroupController extends BaseCRUDController
             unset($permission->pivot);
         });
         return \SuccessData('Group Permissions Found Successfully', $permissions);
+    }
+
+    public function LeaveGroup(GroupIdRequest $request){
+        $arr = Arr::only($request->validated(), ['groupId']);
+        $userId = \auth('user')->user()->id;
+        $group = Group::where('id',$arr['groupId'])->whereHas('GroupUsers',function ($q) use ($userId){
+            $q->where('user_id',$userId)->where('is_admin',0);
+        })->first();
+        if (!$group){
+            throw new AccessDeniedHttpException('Access Denied : Not In Group Or You is Admin Of this Group');
+        }
+        $group->GroupUsers()->where('user_id',$userId)->delete();
+        return \Success('User Leave Group Successfully');
     }
 
 }
