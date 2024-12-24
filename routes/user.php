@@ -36,4 +36,7 @@ Route::group(['middleware' => ['auth:user', 'scope:user']], function () {
     Route::get('/show_file_versions', [FileController::class, 'ShowFileVersions']);
 
     Route::post('/return_to_old_version', [FileController::class, 'returnToOldVersion']);
+
+    Route::get('/get_file_log',[FileController::class,'getFileLog']);
+    Route::get('/get_user_log',[UserController::class,'getUserLog']);
 });

@@ -156,4 +156,10 @@ class FileController extends BaseCRUDController
         return \Success('The file Updated Successfully');
     }
 
+    public function getFileLog(ShowFileVersionsRequest $request){
+        $arr = Arr::only($request->validated(),['fileId']);
+        $data = Storage::get('logs/File_logs/file_'.$arr['fileId'].'.log');
+       return \SuccessData('found Successfully',$data);
+    }
+
 }

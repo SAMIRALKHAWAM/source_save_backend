@@ -16,6 +16,7 @@ class File extends Model
     protected $appends = [
         'user_id',
         'user_name',
+        'color',
     ];
 
     protected $fillable = [
@@ -44,6 +45,16 @@ class File extends Model
         $id = $this->GroupUser?->user_id;
         unset($this->GroupUser);
         return $id;
+    }
+
+    /** @noinspection PhpUnused */
+    public function getColorAttribute()
+    {
+        $color = 1;
+        if ($this->reserved_by != null) {
+            $color = 0;
+        }
+        return $color;
     }
 
     /** @noinspection PhpUnused */

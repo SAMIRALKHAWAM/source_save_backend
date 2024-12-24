@@ -8,15 +8,19 @@ use App\Http\Requests\User\Auth\ResendOTPRequest;
 use App\Http\Requests\User\Auth\ResetPasswordRequest;
 use App\Http\Requests\User\Auth\UserLoginRequest;
 use App\Http\Requests\User\Auth\VerifyAccountRequest;
+use App\Http\Requests\User\GetUserLogRequest;
 use App\Mail\OTPVerificationMail;
 use App\Models\Admin;
+use App\Models\GroupUser;
 use App\Models\User;
 use App\Services\UserService;
 use GrahamCampbell\ResultType\Success;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use phpseclib3\Crypt\DSA\Formats\Signature\ASN1;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class UserController extends BaseCRUDController
 {
@@ -88,6 +92,18 @@ class UserController extends BaseCRUDController
             return \Success('Password Changed successfully');
         }
         throw ValidationException::withMessages(['Code Wrong Or Expired']);
+    }
+
+    public function getUserLog(GetUserLogRequest $request)
+    {
+        $arr = Arr::only($request->validated(), ['userId', 'groupId']);
+        $user = \auth('user')->user();
+        $group_user_admin = GroupUser::where('user_id', $user->id)->where('group_id', $arr['groupId'])->first();
+        if (!$group_user_admin) {
+            throw new AccessDeniedHttpException('Access Denied : you not admin of group');
+        }
+        $file = Storage::get('logs/user_logs/user_' . $arr['userId'] . '.log');
+        return \SuccessData('User Log Found Successfully', $file);
     }
 }
 
