@@ -8,9 +8,12 @@ use App\Enums\GroupStatusEnum;
 use App\Http\Controllers\BaseCRUDController;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\File\CreateFileRequest;
+use App\Http\Requests\File\ShowFileVersionsRequest;
 use App\Http\Requests\Files\ChangeFileStatusRequest;
 use App\Http\Requests\Files\CheckInRequest;
 use App\Http\Requests\Files\CheckOutRequest;
+use App\Http\Requests\OldFile\OldFileIdRequest;
+
 use App\Models\File;
 use App\Models\Group;
 use App\Models\GroupUser;
@@ -57,7 +60,7 @@ class FileController extends BaseCRUDController
         $user = \auth('user')->user();
         $arr = Arr::only($request->validated(), ['group_id', 'files']);
         $group_Admin = Group::GroupAdmin($arr['group_id']);
-        if ($group_Admin->user_id == $user->id ||  $user->hasPermissionTo('Edit_File')) {
+        if ($group_Admin->user_id == $user->id || $user->hasPermissionTo('Edit_File')) {
             File::whereIn('id', $arr['files'])->update(['availability' => FileStatusEnum::UNAVAILABLE, 'reserved_by' => $user->id]);
             foreach ($arr['files'] as $file) {
                 $fileName = 'logs/file_logs/file_' . $file . '.log';
@@ -113,6 +116,44 @@ class FileController extends BaseCRUDController
             ]);
         }
         return \Success('Done Check Out File');
-
     }
+
+    public function ShowFileVersions(ShowFileVersionsRequest $request)
+    {
+        $arr = Arr::only($request->validated(), ['fileId']);
+        $old_files = OldFile::where('file_id', $arr['fileId'])->orderBy('created_at', 'desc')->get();
+        return \SuccessData('Files Found Successfully', $old_files);
+    }
+
+    public function returnToOldVersion(OldFileIdRequest $request)
+    {
+        $arr = Arr::only($request->validated(), ['old_file_id']);
+        $oldFile = OldFile::find($arr['old_file_id']);
+        $file = $oldFile->File;
+        if ($file->reserved_by != null) {
+            throw new AccessDeniedHttpException('Access Denied : this File is UNAVAILABLE');
+        }
+        $newFileArr = [
+            'group_user_id' => $oldFile->group_user_id,
+            'name' => $oldFile->name,
+            'description' => $oldFile->description,
+            'size_MB' => $oldFile->size_MB,
+            'url' => $oldFile->url,
+            'reserved_by' => null,
+            'availability' => FileStatusEnum::AVAILABLE,
+            'status' => GroupStatusEnum::ACCEPTED,
+        ];
+        $oldFileArr = [
+            'file_id' => $file->id,
+            'group_user_id' => $file->group_user_id,
+            'name' => $file->name,
+            'description' => $file->description,
+            'size_MB' => $file->size_MB,
+            'url' => $file->url,
+        ];
+        $file->update($newFileArr);
+        $oldFile->update($oldFileArr);
+        return \Success('The file Updated Successfully');
+    }
+
 }

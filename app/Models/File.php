@@ -30,7 +30,7 @@ class File extends Model
     ];
 
     protected $hidden = [
-        'created_at',
+
         'updated_at',
     ];
 
@@ -38,6 +38,7 @@ class File extends Model
         'size_MB' => 'float',
     ];
 
+    /** @noinspection PhpUnused */
     public function getUserIdAttribute()
     {
         $id = $this->GroupUser?->user_id;

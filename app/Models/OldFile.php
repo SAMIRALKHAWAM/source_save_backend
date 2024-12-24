@@ -12,6 +12,11 @@ class OldFile extends Model
 
     protected $primaryKey = 'id';
 
+    protected $appends = [
+        'user_id',
+        'user_name',
+    ];
+
     protected $fillable = [
         'file_id',
         'group_user_id',
@@ -30,11 +35,29 @@ class OldFile extends Model
         'size_MB' => 'float',
     ];
 
+
+    /** @noinspection PhpUnused */
+    public function getUserIdAttribute()
+    {
+        $id = $this->GroupUser?->user_id;
+        unset($this->GroupUser);
+        return $id;
+    }
+
+    /** @noinspection PhpUnused */
+    public function getUserNameAttribute()
+    {
+        $name = $this->GroupUser?->user_name;
+        unset($this->GroupUser);
+        return $name;
+    }
+
     public function File(): BelongsTo
     {
         return $this->belongsTo(File::class, 'file_id');
     }
 
+    /** @noinspection PhpUnused */
     public function GroupUser(): BelongsTo
     {
         return $this->belongsTo(GroupUser::class, 'group_user_id');

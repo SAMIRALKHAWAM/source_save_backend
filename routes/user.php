@@ -27,9 +27,13 @@ Route::group(['middleware' => ['auth:user', 'scope:user']], function () {
 
     Route::get('/get_users', [UserController::class, 'index']);
 
-    Route::get('/get_groups',[GroupController::class,'index']);
-    Route::get('/get_group_users',[GroupController::class,'GetGroupUsers']);
-    Route::get('/get_group_permissions',[GroupController::class,'GetGroupPermissions']);
+    Route::get('/get_groups', [GroupController::class, 'index']);
+    Route::get('/get_group_users', [GroupController::class, 'GetGroupUsers']);
+    Route::get('/get_group_permissions', [GroupController::class, 'GetGroupPermissions']);
 
-    Route::post('/leave_group',[GroupController::class,'LeaveGroup']);
+    Route::post('/leave_group', [GroupController::class, 'LeaveGroup']);
+
+    Route::get('/show_file_versions', [FileController::class, 'ShowFileVersions']);
+
+    Route::post('/return_to_old_version', [FileController::class, 'returnToOldVersion']);
 });
