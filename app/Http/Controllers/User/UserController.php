@@ -9,6 +9,7 @@ use App\Http\Requests\User\Auth\ResetPasswordRequest;
 use App\Http\Requests\User\Auth\UserLoginRequest;
 use App\Http\Requests\User\Auth\VerifyAccountRequest;
 use App\Mail\OTPVerificationMail;
+use App\Models\Admin;
 use App\Models\User;
 use App\Services\UserService;
 use GrahamCampbell\ResultType\Success;
@@ -19,24 +20,30 @@ use phpseclib3\Crypt\DSA\Formats\Signature\ASN1;
 
 class UserController extends BaseCRUDController
 {
-    protected $mail;
 
-    public function __construct(UserService $service, OTPVerificationMail $mail)
+
+    public function __construct(UserService $service)
     {
         $this->service = $service;
-        $this->mail = $mail;
         $this->createRequest = CreateUserRequest::class;
     }
 
     public function Login(UserLoginRequest $request)
     {
         $arr = Arr::only($request->validated(), ['email', 'password']);
-        $user = User::where('email', $arr['email'])->first();
-        if (!$user || !Hash::check($arr['password'], $user->password)) {
+        $actor = User::where('email', $arr['email'])->first();
+        $role = 'user';
+        if (!$actor) {
+            $actor = Admin::where('email', $arr['email'])->first();
+            $role = 'admin';
+        }
+        if (!Hash::check($arr['password'], $actor->password)) {
             throw ValidationException::withMessages(['email or password not match']);
         }
-        $user['token'] = $user->createToken('authToken', ['user'])->accessToken;
-        return \SuccessData('user Login Successfully', $user);
+        $actor['role'] = $role;
+        $actor['token'] = $actor->createToken('authToken', [$role])->accessToken;
+
+        return \SuccessData('user Login Successfully', $actor);
     }
 
     public function Logout()
@@ -64,7 +71,8 @@ class UserController extends BaseCRUDController
     {
         $arr = Arr::only($request->validated(), ['email']);
         $user = User::where('email', $arr['email'])->first();
-        $this->mail->sendEmail($user);
+        $mail = new OTPVerificationMail();
+        $mail->sendEmail($user);
         return \Success('OTP Send Successfully');
     }
 

@@ -35,9 +35,21 @@ class GroupService extends BaseService
             $user = \auth('user')->user();
             $groups = Group::whereHas('GroupUsers', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
-            })->get();
-            return $groups;
+            });
+            if (!empty($arr['status'])) {
+                if ($arr['status'] == GroupStatusEnum::PENDING) {
+                    $where = [
+                        'approved_by' => null,
+                    ];
+                } else {
+                    $where = [
+                        ['approved_by', '!=', null]
+                    ];
+                }
+            }
+            return $groups->where($where)->get();
         }
+        // if admin_api route prefix
         if (!empty($arr['status'])) {
             if ($arr['status'] == GroupStatusEnum::PENDING) {
                 $where = [

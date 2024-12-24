@@ -19,6 +19,7 @@ class Group extends Model
     protected $appends = [
         'approved_admin_name',
         'approved_admin_email',
+        'is_admin',
     ];
 
     protected $fillable = [
@@ -45,6 +46,18 @@ class Group extends Model
         $email = $this->Admin?->email;
         unset($this->Admin);
         return $email;
+    }
+
+    /** @noinspection PhpUnused */
+    public function getIsAdminAttribute()
+    {
+        if (\request()->route()->getPrefix() == 'user_api') {
+            $userId = \auth('user')->user()->id;
+            $groupAdminId = $this->GroupUsers()->where('is_admin',1)->first()?->user_id;
+
+            return $userId == $groupAdminId;
+        }
+        return false;
     }
 
     /** @noinspection PhpUnused */
