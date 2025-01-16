@@ -12,16 +12,28 @@ class NotificationController extends Controller
 
     public function sendNotification($fcm_token)
     {
-        $messaging = Firebase::messaging();
-        $message = [
-            'notification' => [
-                'title' => 'Hello!',
-                'body' => 'This is a Firebase Notification.',
-            ],
-            'token' => $fcm_token,
-        ];
+        try {
+            $messaging = (new \Kreait\Firebase\Factory)
+                ->withServiceAccount('sourcesave-sa.json')
+                ->createMessaging();
 
-        $messaging->send($message);
+            $message = [
+                'notification' => [
+                    'title' => 'Hello!',
+                    'body' => 'This is a Firebase Notification.',
+                ],
+                'token' => $fcm_token,
+            ];
+
+            $response = $messaging->send($message);
+
+
+        } catch (\Kreait\Firebase\Exception\MessagingException $e) {
+            echo 'Messaging error: ' . $e->getMessage();
+        } catch (\Throwable $e) {
+            echo 'General error: ' . $e->getMessage();
+        }
+
 
     }
 
