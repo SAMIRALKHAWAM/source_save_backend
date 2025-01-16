@@ -28,6 +28,7 @@ class UserLoginRequest extends BaseRequest
                 }
             }, 'required', 'email'],
             'password' => 'required|min:8',
+            'fcm_token' => 'nullable',
         ];
     }
 }

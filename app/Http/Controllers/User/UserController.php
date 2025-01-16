@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\BaseCRUDController;
+use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Requests\User\Auth\CreateUserRequest;
 use App\Http\Requests\User\Auth\ResendOTPRequest;
 use App\Http\Requests\User\Auth\ResetPasswordRequest;
@@ -25,16 +26,17 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 class UserController extends BaseCRUDController
 {
 
-
-    public function __construct(UserService $service)
+    protected $notification;
+    public function __construct(UserService $service,NotificationController $notificationController)
     {
         $this->service = $service;
+        $this->notification = $notificationController;
         $this->createRequest = CreateUserRequest::class;
     }
 
     public function Login(UserLoginRequest $request)
     {
-        $arr = Arr::only($request->validated(), ['email', 'password']);
+        $arr = Arr::only($request->validated(), ['email', 'password','fcm_token']);
         $actor = User::where('email', $arr['email'])->first();
         $role = 'user';
         if (!$actor) {
@@ -44,6 +46,10 @@ class UserController extends BaseCRUDController
         if (!Hash::check($arr['password'], $actor->password)) {
             throw ValidationException::withMessages(['email or password not match']);
         }
+        if (!empty($arr['fcm_token'])){
+            $actor->update(['fcm_token' => $arr['fcm_token']]);
+        }
+        $this->notification->sendNotification();
         $actor['role'] = $role;
         $actor['token'] = $actor->createToken('authToken', [$role])->accessToken;
 
