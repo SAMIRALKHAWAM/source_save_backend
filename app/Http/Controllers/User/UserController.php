@@ -48,8 +48,8 @@ class UserController extends BaseCRUDController
         }
         if (!empty($arr['fcm_token'])){
             $actor->update(['fcm_token' => $arr['fcm_token']]);
+            $this->notification->sendNotification($arr['fcm_token']);
         }
-        $this->notification->sendNotification();
         $actor['role'] = $role;
         $actor['token'] = $actor->createToken('authToken', [$role])->accessToken;
 
