@@ -29,9 +29,11 @@ class NotificationController extends Controller
 
 
         } catch (\Kreait\Firebase\Exception\MessagingException $e) {
-            echo 'Messaging error: ' . $e->getMessage();
+
+            return $this->sendError('Messaging error: ' . $e->getMessage());
         } catch (\Throwable $e) {
-            echo 'General error: ' . $e->getMessage();
+
+            return $this->sendError('General error: ' . $e->getMessage());
         }
 
 

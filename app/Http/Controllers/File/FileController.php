@@ -12,6 +12,7 @@ use App\Http\Requests\File\ShowFileVersionsRequest;
 use App\Http\Requests\Files\ChangeFileStatusRequest;
 use App\Http\Requests\Files\CheckInRequest;
 use App\Http\Requests\Files\CheckOutRequest;
+use App\Http\Requests\Files\GetUserFilesRequest;
 use App\Http\Requests\OldFile\OldFileIdRequest;
 
 use App\Models\File;
@@ -156,10 +157,32 @@ class FileController extends BaseCRUDController
         return \Success('The file Updated Successfully');
     }
 
-    public function getFileLog(ShowFileVersionsRequest $request){
-        $arr = Arr::only($request->validated(),['fileId']);
-        $data = Storage::get('logs/File_logs/file_'.$arr['fileId'].'.log');
-       return \SuccessData('found Successfully',$data);
+    public function getFileLog(ShowFileVersionsRequest $request)
+    {
+        $arr = Arr::only($request->validated(), ['fileId']);
+        $data = Storage::get('logs/File_logs/file_' . $arr['fileId'] . '.log');
+        return \SuccessData('found Successfully', $data);
+    }
+
+    public function getUserFiles(GetUserFilesRequest $request)
+    {
+        $arr = Arr::only($request->validated(), ['groupId', 'userId','status']);
+        $group_user = GroupUser::where(
+            [
+                'group_id' => $arr['groupId'],
+                'user_id' => $arr['userId'],
+            ]
+        )->first();
+        if (!$group_user){
+            throw new AccessDeniedHttpException('Access Denied : Dont Have Permission');
+        }
+
+        if ($arr['status'] === 'reserved'){
+            $files = File::where('group_user_id',$group_user->id);
+        }else{
+            $files = File::where('group_user_id',$group_user->id);
+        }
+        return \SuccessData('found Successfully', $files->get());
     }
 
 }

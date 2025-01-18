@@ -39,4 +39,6 @@ Route::group(['middleware' => ['auth:user', 'scope:user']], function () {
 
     Route::get('/get_file_log',[FileController::class,'getFileLog']);
     Route::get('/get_user_log',[UserController::class,'getUserLog']);
+
+    Route::get('/get_user_files',[FileController::class,'getUserFiles']);
 });
