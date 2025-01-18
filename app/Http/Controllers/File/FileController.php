@@ -166,21 +166,24 @@ class FileController extends BaseCRUDController
 
     public function getUserFiles(GetUserFilesRequest $request)
     {
-        $arr = Arr::only($request->validated(), ['groupId', 'userId','status']);
+        $arr = Arr::only($request->validated(), ['groupId', 'userId', 'status']);
         $group_user = GroupUser::where(
             [
                 'group_id' => $arr['groupId'],
                 'user_id' => $arr['userId'],
             ]
         )->first();
-        if (!$group_user){
+        if (!$group_user) {
             throw new AccessDeniedHttpException('Access Denied : Dont Have Permission');
         }
 
-        if ($arr['status'] === 'reserved'){
-            $files = File::where('group_user_id',$group_user->id);
-        }else{
-            $files = File::where('group_user_id',$group_user->id);
+        if ($arr['status'] === 'reserved') {
+            $group = Group::find($arr['groupId']);
+            $group_users = $group->GroupUsers()->pluck('id');
+            $files = File::whereIn('group_user_id', $group_users)->where('reserved_by',$arr['userId']);
+
+        } else {
+            $files = File::where('group_user_id', $group_user->id);
         }
         return \SuccessData('found Successfully', $files->get());
     }
