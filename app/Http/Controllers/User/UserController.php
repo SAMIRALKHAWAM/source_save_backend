@@ -26,11 +26,11 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 class UserController extends BaseCRUDController
 {
 
-    protected $notification;
-    public function __construct(UserService $service,NotificationController $notificationController)
+
+    public function __construct(UserService $service)
     {
         $this->service = $service;
-        $this->notification = $notificationController;
+
         $this->createRequest = CreateUserRequest::class;
     }
 
@@ -48,7 +48,6 @@ class UserController extends BaseCRUDController
         }
         if (!empty($arr['fcm_token'])){
             $actor->update(['fcm_token' => $arr['fcm_token']]);
-            $this->notification->sendNotification($arr['fcm_token']);
         }
         $actor['role'] = $role;
         $actor['token'] = $actor->createToken('authToken', [$role])->accessToken;

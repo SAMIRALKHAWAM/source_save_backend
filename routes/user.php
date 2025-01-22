@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\File\CompareFileController;
 use App\Http\Controllers\File\FileController;
 use App\Http\Controllers\Group\GroupController;
 use App\Http\Controllers\Permission\PermissionController;
@@ -41,4 +42,7 @@ Route::group(['middleware' => ['auth:user', 'scope:user']], function () {
     Route::get('/get_user_log',[UserController::class,'getUserLog']);
 
     Route::get('/get_user_files',[FileController::class,'getUserFiles']);
+    Route::get('/compareFiles',[CompareFileController::class,'compareFiles']);
+
+
 });

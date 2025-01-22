@@ -12,6 +12,7 @@ use App\Http\Requests\File\ShowFileVersionsRequest;
 use App\Http\Requests\Files\ChangeFileStatusRequest;
 use App\Http\Requests\Files\CheckInRequest;
 use App\Http\Requests\Files\CheckOutRequest;
+
 use App\Http\Requests\Files\GetUserFilesRequest;
 use App\Http\Requests\OldFile\OldFileIdRequest;
 
@@ -23,6 +24,7 @@ use App\Services\FileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -187,5 +189,7 @@ class FileController extends BaseCRUDController
         }
         return \SuccessData('found Successfully', $files->get());
     }
+
+
 
 }
