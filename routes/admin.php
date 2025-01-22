@@ -14,4 +14,7 @@ Route::group(['middleware' => ['auth:admin', 'scope:admin']], function () {
     Route::post('/change_group_status',[GroupController::class,'ChangeStatus']);
     Route::get('/get_group_users',[GroupController::class,'GetGroupUsers']);
     Route::get('/get_group_permissions',[GroupController::class,'GetGroupPermissions']);
+
+    Route::get('/get_users',[UserController::class,'index']);
+    Route::get('/get_user_groups',[GroupController::class,'GetUserGroups']);
 });

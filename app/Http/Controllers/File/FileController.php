@@ -105,7 +105,7 @@ class FileController extends BaseCRUDController
                 'group_user_id' => $new_group_user_id,
                 'name' => $file->name,
                 'description' => $file->description,
-                'size_MB' => number_format(Storage::size('public/' . $uploadFile['url']) / 1024 / 1024, 2),
+                'size_MB' => 0,
                 'url' => Storage::url('public/' . $uploadFile['url']),
                 'reserved_by' => null,
                 'availability' => FileStatusEnum::AVAILABLE,

@@ -9,7 +9,9 @@ use App\Http\Requests\Group\ChangeStatusGroupRequest;
 use App\Http\Requests\Group\CreateGroupRequest;
 use App\Http\Requests\Group\GroupIdRequest;
 use App\Http\Requests\Group\LeaveGroupRequest;
+use App\Http\Requests\User\UserIdRequest;
 use App\Models\Group;
+use App\Models\User;
 use App\Services\GroupService;
 use App\Services\RoleService;
 use Dotenv\Exception\ValidationException;
@@ -76,6 +78,16 @@ class GroupController extends BaseCRUDController
         }
         $group->GroupUsers()->where('user_id',$userId)->delete();
         return \Success('User Leave Group Successfully');
+    }
+
+    public function GetUserGroups(UserIdRequest $request){
+        $arr = Arr::only($request->validated(),['userId']);
+        $user = User::find($arr['userId']);
+        $group_users = $user->GroupUsers;
+        $groups =  $group_users->map(function ($group){
+           return  $group->Group;
+        });
+        return \SuccessData('groups Found successfully',$groups);
     }
 
 }
