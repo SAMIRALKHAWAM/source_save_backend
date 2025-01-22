@@ -14,7 +14,7 @@ class NotificationController extends Controller
     {
         try {
             $factory = (new \Kreait\Firebase\Factory())
-                ->withServiceAccount(base_path('sourcesave-sa.json'));
+                ->withServiceAccount('sourcesave-sa.json');
 
             $messaging = $factory->createMessaging();
 
