@@ -13,9 +13,10 @@ class NotificationController extends Controller
     public function sendNotification($fcm_token)
     {
         try {
-            $messaging = (new \Kreait\Firebase\Factory)
-                ->withServiceAccount('sourcesave-sa.json')
-                ->createMessaging();
+            $factory = (new \Kreait\Firebase\Factory())
+                ->withServiceAccount(base_path('sourcesave-sa.json'));
+
+            $messaging = $factory->createMessaging();
 
             $message = [
                 'notification' => [
