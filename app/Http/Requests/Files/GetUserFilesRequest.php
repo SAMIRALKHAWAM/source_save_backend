@@ -21,7 +21,7 @@ class GetUserFilesRequest extends BaseRequest
             $user_id = \auth('user')->user()->id;
             return [
                 'groupId' => [Rule::exists('groups', 'id'), 'required'],
-                'userId' => [Rule::exists('users', 'id')->where('id', $user_id), 'required'],
+                'userId' => [Rule::exists('users', 'id'), 'required'],
                 'status' => [Rule::in(['free','reserved']),'required'],
             ];
         } else {
