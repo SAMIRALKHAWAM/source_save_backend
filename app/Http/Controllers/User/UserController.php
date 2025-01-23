@@ -26,90 +26,40 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 class UserController extends BaseCRUDController
 {
 
-
     public function __construct(UserService $service)
     {
         $this->service = $service;
-
         $this->createRequest = CreateUserRequest::class;
     }
 
     public function Login(UserLoginRequest $request)
     {
-        $arr = Arr::only($request->validated(), ['email', 'password','fcm_token']);
-        $actor = User::where('email', $arr['email'])->first();
-        $role = 'user';
-        if (!$actor) {
-            $actor = Admin::where('email', $arr['email'])->first();
-            $role = 'admin';
-        }
-        if (!Hash::check($arr['password'], $actor->password)) {
-            throw ValidationException::withMessages(['email or password not match']);
-        }
-        if (!empty($arr['fcm_token'])){
-            $actor->update(['fcm_token' => $arr['fcm_token']]);
-        }
-        $actor['role'] = $role;
-        $actor['token'] = $actor->createToken('authToken', [$role])->accessToken;
 
-        return \SuccessData('user Login Successfully', $actor);
+        return $this->service->Login($request);
     }
 
     public function Logout()
     {
-        $user = \auth('user')->user();
-        $user->tokens()->where('scopes', '["user"]')->delete();
-        return \Success('user Logout Successfully');
+        return $this->service->Logout();
     }
 
     public function VerifyAccount(VerifyAccountRequest $request)
     {
-        $arr = Arr::only($request->validated(), ['email', 'code']);
-        $user = User::where('email', $arr['email'])->first();
-        if (Hash::check($arr['code'], $user->Code?->code) && \now()->between($user->Code?->from_date_time, $user->Code?->to_date_time)) {
-            $user->update(['email_verified_at' => \now()]);
-            $user->Code()->delete();
-            unset($user->Code);
-            $user['token'] = $user->createToken('authToken', ['user'])->accessToken;
-            return \SuccessData('Email verified successfully', $user);
-        }
-        throw ValidationException::withMessages(['Code Wrong Or Expired']);
+        return $this->service->VerifyAccount($request);
     }
 
     public function ResendOTP(ResendOTPRequest $request)
     {
-        $arr = Arr::only($request->validated(), ['email']);
-        $user = User::where('email', $arr['email'])->first();
-        $mail = new OTPVerificationMail();
-        $mail->sendEmail($user);
-        return \Success('OTP Send Successfully');
+        return $this->service->ResendOTP($request);
     }
 
 
     public function ResetPassword(ResetPasswordRequest $request)
     {
-        $arr = Arr::only($request->validated(), ['email', 'code', 'password']);
-        $user = User::where('email', $arr['email'])->first();
-        if (Hash::check($arr['code'], $user->Code?->code) && \now()->between($user->Code?->from_date_time, $user->Code?->to_date_time)) {
-            $user->update(['password' => $arr['password']]);
-            $user->Code()->delete();
-            unset($user->Code);
-            return \Success('Password Changed successfully');
-        }
-        throw ValidationException::withMessages(['Code Wrong Or Expired']);
+        return $this->service->ResetPassword($request);
     }
 
-    public function getUserLog(GetUserLogRequest $request)
-    {
-        $arr = Arr::only($request->validated(), ['userId', 'groupId']);
-        $user = \auth('user')->user();
-        $group_user_admin = GroupUser::where('user_id', $user->id)->where('group_id', $arr['groupId'])->first();
-        if (!$group_user_admin) {
-            throw new AccessDeniedHttpException('Access Denied : you not admin of group');
-        }
-        $file = Storage::get('logs/user_logs/user_' . $arr['userId'] . '.log');
-        return \SuccessData('User Log Found Successfully', $file);
-    }
+
 }
 
 

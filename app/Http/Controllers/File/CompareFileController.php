@@ -19,10 +19,9 @@ use function Illuminate\Events\queueable;
 class CompareFileController extends Controller
 {
 
-    public function compareFiles(CompareRequest $request){
-        $arr = Arr::only($request->validated(),['path1','path2']);
-        $replacedPath1 = preg_replace('/storage/', 'public', $arr['path1'], 1);
-        $replacedPath2 = preg_replace('/storage/', 'public', $arr['path2'], 1);
+    public function compareFiles($path1,$path2){
+        $replacedPath1 = preg_replace('/storage/', 'public', $path1, 1);
+        $replacedPath2 = preg_replace('/storage/', 'public', $path2, 1);
 
 
         if (!Storage::exists($replacedPath1) || !Storage::exists($replacedPath2)) {
@@ -36,10 +35,7 @@ class CompareFileController extends Controller
         $differences = $this->getDifferences($fullPath1, $fullPath2);
 
 
-        return response()->json([
-            'message' => 'Comparison completed successfully.',
-            'differences' => $differences,
-        ]);
+        return $differences;
     }
 
     private function getDifferences($path1, $path2)
@@ -74,7 +70,11 @@ class CompareFileController extends Controller
             return $diff[0];
         }, $updatedRows);
 
-        return array_values($formattedRows);
+        $array = array_values($formattedRows);
+
+        $text = implode(',', $array);
+
+        return $text;
     }
 
 

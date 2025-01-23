@@ -2,6 +2,10 @@
 
 namespace App\Http;
 
+use App\Http\Middleware\LeaveGroupMiddleware;
+use App\Http\Middleware\LoginMiddleware;
+use App\Http\Middleware\ResetPasswordMiddleware;
+use App\Http\Middleware\VerifyAccountMiddleware;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
 class Kernel extends HttpKernel
@@ -71,6 +75,10 @@ class Kernel extends HttpKernel
         'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
         'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         'cors' => \App\Http\Middleware\Cors::class,
+        'leave_group' => LeaveGroupMiddleware::class,
+        'login' => LoginMiddleware::class,
+        'verify_account' => VerifyAccountMiddleware::class,
+        'reset_password' => ResetPasswordMiddleware::class,
 
     ];
 }

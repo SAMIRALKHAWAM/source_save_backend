@@ -18,22 +18,10 @@ class AdminController extends BaseCRUDController
         $this->service = $service;
     }
 
-    public function Login(AdminLoginRequest $request)
-    {
-        $arr = Arr::only($request->validated(), ['email', 'password']);
-        $admin = $this->service->getAll(['email' => $arr['email']])->first();
-        if (!$admin || !Hash::check($arr['password'], $admin->password)) {
-            throw ValidationException::withMessages(['email or password not match']);
-        }
-        $admin['token'] = $admin->createToken('authToken', ['admin'])->accessToken;
-        return \SuccessData('Admin Login Successfully', $admin);
-    }
 
     public function Logout()
     {
-        $admin = \auth('admin')->user();
-        $admin->tokens()->where('scopes','["admin"]')->delete();
-        return \Success('Admin Logout Successfully');
+        return $this->service->Logout();
     }
 
 }

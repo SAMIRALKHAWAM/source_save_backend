@@ -20,6 +20,7 @@ return new class extends Migration {
             $table->mediumText('description');
             $table->decimal('size_MB');
             $table->string('url');
+            $table->longText('diff')->nullable();
             $table->timestamps();
         });
     }

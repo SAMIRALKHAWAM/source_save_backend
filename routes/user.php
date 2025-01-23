@@ -9,10 +9,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [UserController::class, 'store']);
-Route::post('/verify_account', [UserController::class, 'VerifyAccount']);
+Route::post('/verify_account', [UserController::class, 'VerifyAccount'])->middleware('verify_account');
 Route::post('/resend_otp', [UserController::class, 'ResendOTP']);
-Route::post('/reset_password', [UserController::class, 'ResetPassword']);
-Route::post('/login', [UserController::class, 'Login']);
+Route::post('/reset_password', [UserController::class, 'ResetPassword'])->middleware('reset_password');
+Route::post('/login', [UserController::class, 'Login'])->middleware('login');
 Route::group(['middleware' => ['auth:user', 'scope:user']], function () {
     Route::post('/logout', [UserController::class, 'Logout']);
     Route::post('/add_group', [GroupController::class, 'store']);
@@ -32,17 +32,19 @@ Route::group(['middleware' => ['auth:user', 'scope:user']], function () {
     Route::get('/get_group_users', [GroupController::class, 'GetGroupUsers']);
     Route::get('/get_group_permissions', [GroupController::class, 'GetGroupPermissions']);
 
-    Route::post('/leave_group', [GroupController::class, 'LeaveGroup']);
+    Route::post('/leave_group', [GroupController::class, 'LeaveGroup'])->middleware('leave_group');
 
     Route::get('/show_file_versions', [FileController::class, 'ShowFileVersions']);
 
     Route::post('/return_to_old_version', [FileController::class, 'returnToOldVersion']);
 
-    Route::get('/get_file_log',[FileController::class,'getFileLog']);
-    Route::get('/get_user_log',[UserController::class,'getUserLog']);
+    Route::get('/get_file_log', [FileController::class, 'getFileLog']);
 
-    Route::get('/get_user_files',[FileController::class,'getUserFiles']);
-    Route::get('/compareFiles',[CompareFileController::class,'compareFiles']);
+
+    Route::get('/get_user_files', [FileController::class, 'getUserFiles']);
+    Route::get('/compareFiles', [CompareFileController::class, 'compareFiles']);
+    Route::get('/get_edited_files', [FileController::class, 'GetFilesEditByUser']);
+
 
 
 });

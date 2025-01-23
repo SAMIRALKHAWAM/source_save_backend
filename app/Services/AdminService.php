@@ -12,5 +12,10 @@ class AdminService extends BaseService
         $this->model = $model;
     }
 
+    public function Logout(){
+        $admin = \auth('admin')->user();
+        $admin->tokens()->where('scopes','["admin"]')->delete();
+        return \Success('Admin Logout Successfully');
+    }
 
 }

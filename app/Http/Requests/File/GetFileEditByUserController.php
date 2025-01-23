@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Requests\Files;
+namespace App\Http\Requests\File;
 
 use App\Http\Requests\BaseRequest;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class GetUserFilesRequest extends BaseRequest
+class GetFileEditByUserController extends BaseRequest
 {
 
 
@@ -17,10 +17,9 @@ class GetUserFilesRequest extends BaseRequest
      */
     public function rules(): array
     {
-            return [
-                'groupId' => [Rule::exists('groups', 'id'), 'required'],
-                'userId' => [Rule::exists('users', 'id'), 'required'],
-                'status' => [Rule::in(['free','reserved']),'required'],
-            ];
+          return [
+              'groupId' => [Rule::exists('groups', 'id'), 'required'],
+              'userId' => [Rule::exists('users', 'id'), 'required'],
+        ];
     }
 }

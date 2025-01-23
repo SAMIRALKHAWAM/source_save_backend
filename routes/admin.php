@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 
-Route::post('/login', [AdminController::class, 'Login']);
+
 Route::group(['middleware' => ['auth:admin', 'scope:admin']], function () {
     Route::post('/logout', [AdminController::class, 'Logout']);
     Route::get('/get_groups',[GroupController::class,'index']);
@@ -19,4 +19,5 @@ Route::group(['middleware' => ['auth:admin', 'scope:admin']], function () {
     Route::get('/get_users',[UserController::class,'index']);
     Route::get('/get_user_groups',[GroupController::class,'GetUserGroups']);
     Route::get('/get_user_files',[FileController::class,'getUserFiles']);
+    Route::get('/get_edited_files', [FileController::class, 'GetFilesEditByUser']);
 });

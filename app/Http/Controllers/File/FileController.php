@@ -9,6 +9,7 @@ use App\Http\Controllers\BaseCRUDController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Requests\File\CreateFileRequest;
+use App\Http\Requests\File\GetFileEditByUserController;
 use App\Http\Requests\File\ShowFileVersionsRequest;
 use App\Http\Requests\Files\ChangeFileStatusRequest;
 use App\Http\Requests\Files\CheckInRequest;
@@ -33,11 +34,13 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 class FileController extends BaseCRUDController
 {
  protected $notification;
-    public function __construct(FileService $service,NotificationController $notificationController)
+ protected $compare;
+    public function __construct(FileService $service,NotificationController $notificationController,CompareFileController $compare)
     {
         $this->service = $service;
         $this->createRequest = CreateFileRequest::class;
         $this->notification = $notificationController;
+        $this->compare = $compare;
 
     }
 
@@ -107,6 +110,8 @@ class FileController extends BaseCRUDController
             $oldFile = OldFile::create($old_file_arr);
             $path = 'Files/';
             $uploadFile = \uploadFile($arr['url'], '(' . $oldFile->id . ')' . $file->name, $path);
+            $file_new_path = Storage::url('public/' . $uploadFile['url']);
+            $oldFile->update(['diff' => $this->compare->compareFiles($file->url,$file_new_path)]);
             $new_file_arr = [
                 'group_user_id' => $new_group_user_id,
                 'name' => $file->name,
@@ -199,6 +204,18 @@ class FileController extends BaseCRUDController
         return \SuccessData('found Successfully', $files->get());
     }
 
+    public function GetFilesEditByUser(GetFileEditByUserController $request){
+        $arr = Arr::only($request->validated(),['groupId','userId']);
+        $group_user = GroupUser::where([
+            'group_id' => $arr['groupId'],
+            'user_id' => $arr['userId'],
+        ])->first();
+        if (!$group_user){
+            throw new AccessDeniedHttpException('Access Denied: Not In Group Or You Are Admin Of This Group');
+        }
+        $old_files = OldFile::where('group_user_id',$group_user->id)->get();
+        return \SuccessData('File Found Successfully',$old_files);
+    }
 
 
 }

@@ -24,6 +24,7 @@ class OldFile extends Model
         'description',
         'size_MB',
         'url',
+        'diff',
     ];
 
     protected $hidden = [
