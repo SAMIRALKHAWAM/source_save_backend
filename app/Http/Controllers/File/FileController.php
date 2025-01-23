@@ -7,6 +7,7 @@ use App\Enums\FileUpdateTypeEnum;
 use App\Enums\GroupStatusEnum;
 use App\Http\Controllers\BaseCRUDController;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Requests\File\CreateFileRequest;
 use App\Http\Requests\File\ShowFileVersionsRequest;
 use App\Http\Requests\Files\ChangeFileStatusRequest;
@@ -20,6 +21,7 @@ use App\Models\File;
 use App\Models\Group;
 use App\Models\GroupUser;
 use App\Models\OldFile;
+use App\Models\User;
 use App\Services\FileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -30,11 +32,12 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class FileController extends BaseCRUDController
 {
-
-    public function __construct(FileService $service)
+ protected $notification;
+    public function __construct(FileService $service,NotificationController $notificationController)
     {
         $this->service = $service;
         $this->createRequest = CreateFileRequest::class;
+        $this->notification = $notificationController;
 
     }
 
@@ -70,6 +73,9 @@ class FileController extends BaseCRUDController
                 $content = "File Reserved By $user->name \n";
                 Storage::append($fileName, $content);
             }
+            $users = GroupUser::where('group_id',$arr['group_id'])->pluck('user_id')->toArray();
+            $tokens = User::whereIn('id',$users)->whereNotNull('fcm_token')->pluck('fcm_token')->toArray();
+            $this->notification->sendNotification($tokens,'check in files','user '.$user->name . ' check in files group');
             return \Success('Done Check In Files');
         }
         throw new AccessDeniedHttpException('Access Denied : Dont Have Permission');
@@ -87,7 +93,7 @@ class FileController extends BaseCRUDController
             'group_id' => $group_id,
         ])->first()->id;
         $fileName = 'logs/file_logs/file_' . $file->id . '.log';
-        $content = "File UnReserved \n";
+        $content = "File UnReserved by $user->name \n";
         Storage::append($fileName, $content);
         if ($arr['update_type'] == FileUpdateTypeEnum::FULL_UPDATE && !empty($arr['url'])) {
             $old_file_arr = [
@@ -118,6 +124,9 @@ class FileController extends BaseCRUDController
                 'reserved_by' => null,
             ]);
         }
+        $users = GroupUser::where('group_id',$group_id)->pluck('user_id')->toArray();
+        $tokens = User::whereIn('id',$users)->whereNotNull('fcm_token')->pluck('fcm_token')->toArray();
+        $this->notification->sendNotification($tokens,'check out file','user '.$user->name . ' check out file');
         return \Success('Done Check Out File');
     }
 

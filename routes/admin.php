@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\File\FileController;
 use App\Http\Controllers\Group\GroupController;
 use App\Http\Controllers\User\UserController;
 use Illuminate\Http\Request;
@@ -17,4 +18,5 @@ Route::group(['middleware' => ['auth:admin', 'scope:admin']], function () {
 
     Route::get('/get_users',[UserController::class,'index']);
     Route::get('/get_user_groups',[GroupController::class,'GetUserGroups']);
+    Route::get('/get_user_files',[FileController::class,'getUserFiles']);
 });

@@ -10,7 +10,7 @@ use Kreait\Laravel\Firebase\Facades\Firebase;
 class NotificationController extends Controller
 {
 
-    public function sendNotification($fcm_token)
+    public function sendNotification(array $fcm_tokens,$title,$body)
     {
         try {
             $factory = (new \Kreait\Firebase\Factory())
@@ -18,22 +18,19 @@ class NotificationController extends Controller
 
             $messaging = $factory->createMessaging();
 
-            $message = [
-                'notification' => [
-                    'title' => 'Hello!',
-                    'body' => 'This is a Firebase Notification.',
-                ],
-                'token' => $fcm_token,
+            $notification = [
+                    'title' => $title,
+                    'body' => $body,
             ];
 
-            $response = $messaging->send($message);
+            $response = $messaging->sendMulticast($notification,$fcm_tokens);
 
 
         } catch (\Kreait\Firebase\Exception\MessagingException $e) {
             echo $e->getMessage();
             return $this->sendError('Messaging error: ' . $e->getMessage());
         } catch (\Throwable $e) {
-
+            echo $e->getMessage();
             return $this->sendError('General error: ' . $e->getMessage());
         }
 

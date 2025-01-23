@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Group;
 use App\Enums\GroupStatusEnum;
 use App\Http\Controllers\BaseCRUDController;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Requests\Group\ChangeStatusGroupRequest;
 use App\Http\Requests\Group\CreateGroupRequest;
 use App\Http\Requests\Group\GroupIdRequest;
 use App\Http\Requests\Group\LeaveGroupRequest;
 use App\Http\Requests\User\UserIdRequest;
 use App\Models\Group;
+use App\Models\GroupUser;
 use App\Models\User;
 use App\Services\GroupService;
 use App\Services\RoleService;
@@ -24,12 +26,15 @@ class GroupController extends BaseCRUDController
 {
 
     protected $roleService;
+    protected $notification;
 
-    public function __construct(GroupService $service,RoleService $roleService)
+
+    public function __construct(GroupService $service,RoleService $roleService,NotificationController $notificationController)
     {
         $this->service = $service;
         $this->roleService = $roleService;
         $this->createRequest = CreateGroupRequest::class;
+        $this->notification = $notificationController;
 
     }
 
@@ -69,7 +74,8 @@ class GroupController extends BaseCRUDController
 
     public function LeaveGroup(GroupIdRequest $request){
         $arr = Arr::only($request->validated(), ['groupId']);
-        $userId = \auth('user')->user()->id;
+        $user = \auth('user')->user();
+        $userId = $user->id;
         $group = Group::where('id',$arr['groupId'])->whereHas('GroupUsers',function ($q) use ($userId){
             $q->where('user_id',$userId)->where('is_admin',0);
         })->first();
@@ -77,6 +83,9 @@ class GroupController extends BaseCRUDController
             throw new AccessDeniedHttpException('Access Denied : Not In Group Or You is Admin Of this Group');
         }
         $group->GroupUsers()->where('user_id',$userId)->delete();
+        $users = GroupUser::where('group_id',$arr['groupId'])->pluck('user_id')->toArray();
+        $tokens = User::whereIn('id',$users)->whereNotNull('fcm_token')->pluck('fcm_token')->toArray();
+        $this->notification->sendNotification($tokens,'Group '.$group->name,'user '.$user->name . ' leave group');
         return \Success('User Leave Group Successfully');
     }
 
