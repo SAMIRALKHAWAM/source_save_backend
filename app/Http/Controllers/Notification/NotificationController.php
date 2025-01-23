@@ -18,12 +18,17 @@ class NotificationController extends Controller
 
             $messaging = $factory->createMessaging();
 
-            $notification = [
-                    'title' => $title,
-                    'body' => $body,
-            ];
+            foreach ($fcm_tokens as $fcm_token) {
+                $message = [
+                    'notification' => [
+                        'title' => $title,
+                        'body' => $body,
+                    ],
+                    'token' => $fcm_token,
+                ];
 
-            $response = $messaging->sendMulticast($notification,$fcm_tokens);
+                $response = $messaging->send($message);
+            }
 
 
         } catch (\Kreait\Firebase\Exception\MessagingException $e) {
