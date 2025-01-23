@@ -28,10 +28,16 @@ class NotificationService
 
         } catch (\Kreait\Firebase\Exception\MessagingException $e) {
             echo $e->getMessage();
-            return $this->sendError('Messaging error: ' . $e->getMessage());
+            return \response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
         } catch (\Throwable $e) {
             echo $e->getMessage();
-            return $this->sendError('General error: ' . $e->getMessage());
+            return \response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
         }
 
 

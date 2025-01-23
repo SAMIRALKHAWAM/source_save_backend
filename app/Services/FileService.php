@@ -2,10 +2,24 @@
 
 namespace App\Services;
 
+use App\Enums\FileStatusEnum;
+use App\Enums\FileUpdateTypeEnum;
 use App\Enums\GroupStatusEnum;
+use App\Http\Controllers\File\CompareFileController;
+use App\Http\Controllers\Notification\NotificationController;
+use App\Http\Requests\File\GetFileEditByUserController;
+use App\Http\Requests\File\ShowFileVersionsRequest;
+use App\Http\Requests\Files\ChangeFileStatusRequest;
+use App\Http\Requests\Files\CheckInRequest;
+use App\Http\Requests\Files\CheckOutRequest;
 use App\Http\Requests\Files\GetFilesRequest;
+use App\Http\Requests\Files\GetUserFilesRequest;
+use App\Http\Requests\OldFile\OldFileIdRequest;
 use App\Models\File;
 use App\Models\Group;
+use App\Models\GroupUser;
+use App\Models\OldFile;
+use App\Models\User;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
@@ -14,11 +28,15 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 class FileService extends BaseService
 {
     protected $groupUserService;
+    protected $notification;
+    protected $compare;
 
-    public function __construct(File $model, GroupUserService $groupUserService)
+    public function __construct(File $model, GroupUserService $groupUserService, NotificationController $notificationController, CompareFileController $compare)
     {
         $this->model = $model;
         $this->groupUserService = $groupUserService;
+        $this->notification = $notificationController;
+        $this->compare = $compare;
     }
 
     public function create($data)
@@ -59,7 +77,157 @@ class FileService extends BaseService
                 throw new AccessDeniedHttpException('Access Denied : Dont Have Permission');
             }
         }
-       return $files->get();
+        return $files->get();
     }
 
+
+    public function ChangeFileStatus(ChangeFileStatusRequest $request)
+    {
+
+        $file = $request->attributes->get('file');
+        $user = $request->attributes->get('user');
+        $status = $request->input('status');
+        $this->update($file->id, ['status' => $status]);
+        if ($status == GroupStatusEnum::ACCEPTED) {
+            $fileName = 'logs/file_logs/file_' . $file->id . '.log';
+            $content = "File Registered: Accepted By $user->name \n";
+            Storage::put($fileName, $content);
+        }
+        return \Success('file status updated Successfully');
+    }
+
+
+    public function CheckIn(CheckInRequest $request)
+    {
+
+        $files = $request->input('files');
+        $group_id = $request->input('group_id');
+        $user = $request->attributes->get('user');
+        File::whereIn('id', $files)->update(['availability' => FileStatusEnum::UNAVAILABLE, 'reserved_by' => $user->id]);
+        foreach ($files as $file) {
+            $fileName = 'logs/file_logs/file_' . $file . '.log';
+            $content = "File Reserved By $user->name \n";
+            Storage::append($fileName, $content);
+        }
+        $users = GroupUser::where('group_id', $group_id)->pluck('user_id')->toArray();
+        $tokens = User::whereIn('id', $users)->whereNotNull('fcm_token')->pluck('fcm_token')->toArray();
+        $this->notification->sendNotification($tokens, 'check in files', 'user ' . $user->name . ' check in files group');
+        return \Success('Done Check In Files');
+    }
+
+    public function CheckOut(CheckOutRequest $request)
+    {
+        $user = \auth('user')->user();
+        $arr = Arr::only($request->validated(), ['file_id', 'update_type', 'url']);
+        $file = $this->getOne($arr['file_id']);
+        $group_id = $file->GroupUser->group_id;
+        $new_group_user_id = GroupUser::where([
+            'user_id' => $user->id,
+            'group_id' => $group_id,
+        ])->first()->id;
+        $fileName = 'logs/file_logs/file_' . $file->id . '.log';
+        $content = "File UnReserved by $user->name \n";
+        Storage::append($fileName, $content);
+        if ($arr['update_type'] == FileUpdateTypeEnum::FULL_UPDATE && !empty($arr['url'])) {
+            $old_file_arr = [
+                'file_id' => $file->id,
+                'group_user_id' => $file->group_user_id,
+                'name' => $file->name,
+                'description' => $file->description,
+                'size_MB' => $file->size_MB,
+                'url' => $file->url,
+            ];
+            $oldFile = OldFile::create($old_file_arr);
+            $path = 'Files/';
+            $uploadFile = \uploadFile($arr['url'], '(' . $oldFile->id . ')' . $file->name, $path);
+            $file_new_path = Storage::url('public/' . $uploadFile['url']);
+            $oldFile->update(['diff' => $this->compare->compareFiles($file->url, $file_new_path)]);
+            $new_file_arr = [
+                'group_user_id' => $new_group_user_id,
+                'name' => $file->name,
+                'description' => $file->description,
+                'size_MB' => 0,
+                'url' => Storage::url('public/' . $uploadFile['url']),
+                'reserved_by' => null,
+                'availability' => FileStatusEnum::AVAILABLE,
+                'status' => GroupStatusEnum::ACCEPTED,
+            ];
+            $file->update($new_file_arr);
+        } else {
+            $file->update([
+                'availability' => FileStatusEnum::AVAILABLE,
+                'reserved_by' => null,
+            ]);
+        }
+        $users = GroupUser::where('group_id', $group_id)->pluck('user_id')->toArray();
+        $tokens = User::whereIn('id', $users)->whereNotNull('fcm_token')->pluck('fcm_token')->toArray();
+        $this->notification->sendNotification($tokens, 'check out file', 'user ' . $user->name . ' check out file');
+        return \Success('Done Check Out File');
+    }
+
+    public function ShowFileVersions(ShowFileVersionsRequest $request)
+    {
+        $arr = Arr::only($request->validated(), ['fileId']);
+        $old_files = OldFile::where('file_id', $arr['fileId'])->orderBy('created_at', 'desc')->get();
+        return \SuccessData('Files Found Successfully', $old_files);
+    }
+
+    public function returnToOldVersion(OldFileIdRequest $request)
+    {
+        $oldFile = $request->attributes->get('oldFile');
+        $file = $request->attributes->get('file');
+        $newFileArr = [
+            'group_user_id' => $oldFile->group_user_id,
+            'name' => $oldFile->name,
+            'description' => $oldFile->description,
+            'size_MB' => $oldFile->size_MB,
+            'url' => $oldFile->url,
+            'reserved_by' => null,
+            'availability' => FileStatusEnum::AVAILABLE,
+            'status' => GroupStatusEnum::ACCEPTED,
+        ];
+        $oldFileArr = [
+            'file_id' => $file->id,
+            'group_user_id' => $file->group_user_id,
+            'name' => $file->name,
+            'description' => $file->description,
+            'size_MB' => $file->size_MB,
+            'url' => $file->url,
+        ];
+        $file->update($newFileArr);
+        $oldFile->update($oldFileArr);
+        return \Success('The file Updated Successfully');
+    }
+
+    public function getFileLog(ShowFileVersionsRequest $request)
+    {
+        $arr = Arr::only($request->validated(), ['fileId']);
+        $data = Storage::get('logs/File_logs/file_' . $arr['fileId'] . '.log');
+        return \SuccessData('found Successfully', $data);
+    }
+
+    public function getUserFiles(GetUserFilesRequest $request)
+    {
+
+        $status = $request->input('status');
+        $group_user = $request->attributes->get('group_user');
+        $group_id = $request->input('groupId');
+        $user_id = $request->input('userId');
+        if ($status === 'reserved') {
+            $group = Group::find($group_id);
+            $group_users = $group->GroupUsers()->pluck('id');
+            $files = File::whereIn('group_user_id', $group_users)->where('reserved_by', $user_id);
+
+        } else {
+            $files = File::where('group_user_id', $group_user->id);
+        }
+        return \SuccessData('found Successfully', $files->get());
+    }
+
+    public function GetFilesEditByUser(GetFileEditByUserController $request)
+    {
+        $group_user = $request->attributes->get('group_user');
+        $old_files = OldFile::where('group_user_id', $group_user->id)->get();
+        return \SuccessData('File Found Successfully', $old_files);
+    }
 }

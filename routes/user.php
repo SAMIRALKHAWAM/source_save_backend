@@ -19,9 +19,9 @@ Route::group(['middleware' => ['auth:user', 'scope:user']], function () {
 
     Route::post('/add_file', [FileController::class, 'store']);
     Route::get('/get_files', [FileController::class, 'index']);
-    Route::post('/change_file_status', [FileController::class, 'ChangeFileStatus']);
+    Route::post('/change_file_status', [FileController::class, 'ChangeFileStatus'])->middleware('change_file_status');
 
-    Route::post('/check_in_files', [FileController::class, 'CheckIn']);
+    Route::post('/check_in_files', [FileController::class, 'CheckIn'])->middleware('check_in_files');
     Route::post('/check_out_file', [FileController::class, 'CheckOut']);
 
     Route::get('/get_permissions', [PermissionController::class, 'index']);
@@ -36,14 +36,14 @@ Route::group(['middleware' => ['auth:user', 'scope:user']], function () {
 
     Route::get('/show_file_versions', [FileController::class, 'ShowFileVersions']);
 
-    Route::post('/return_to_old_version', [FileController::class, 'returnToOldVersion']);
+    Route::post('/return_to_old_version', [FileController::class, 'returnToOldVersion'])->middleware('return_to_old_version');
 
     Route::get('/get_file_log', [FileController::class, 'getFileLog']);
 
 
-    Route::get('/get_user_files', [FileController::class, 'getUserFiles']);
+    Route::get('/get_user_files', [FileController::class, 'getUserFiles'])->middleware('get_user_files');
     Route::get('/compareFiles', [CompareFileController::class, 'compareFiles']);
-    Route::get('/get_edited_files', [FileController::class, 'GetFilesEditByUser']);
+    Route::get('/get_edited_files', [FileController::class, 'GetFilesEditByUser'])->middleware('get_user_edited_files');
 
 
 

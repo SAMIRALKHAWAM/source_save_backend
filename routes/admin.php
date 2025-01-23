@@ -18,6 +18,7 @@ Route::group(['middleware' => ['auth:admin', 'scope:admin']], function () {
 
     Route::get('/get_users',[UserController::class,'index']);
     Route::get('/get_user_groups',[GroupController::class,'GetUserGroups']);
-    Route::get('/get_user_files',[FileController::class,'getUserFiles']);
-    Route::get('/get_edited_files', [FileController::class, 'GetFilesEditByUser']);
+    Route::get('/get_user_files', [FileController::class, 'getUserFiles'])->middleware('get_user_files');
+    Route::get('/get_edited_files', [FileController::class, 'GetFilesEditByUser'])->middleware('get_user_edited_files');
+
 });

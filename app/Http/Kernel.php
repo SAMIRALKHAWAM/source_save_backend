@@ -2,9 +2,14 @@
 
 namespace App\Http;
 
+use App\Http\Middleware\ChangeFileStatusMiddleware;
+use App\Http\Middleware\CheckInMiddleware;
+use App\Http\Middleware\GetUserEditedFilesMiddleware;
+use App\Http\Middleware\GetUserFilesMiddleware;
 use App\Http\Middleware\LeaveGroupMiddleware;
 use App\Http\Middleware\LoginMiddleware;
 use App\Http\Middleware\ResetPasswordMiddleware;
+use App\Http\Middleware\ReturnToOldVersionMiddleware;
 use App\Http\Middleware\VerifyAccountMiddleware;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
@@ -79,6 +84,11 @@ class Kernel extends HttpKernel
         'login' => LoginMiddleware::class,
         'verify_account' => VerifyAccountMiddleware::class,
         'reset_password' => ResetPasswordMiddleware::class,
+        'change_file_status' => ChangeFileStatusMiddleware::class,
+        'check_in_files' => CheckInMiddleware::class,
+        'return_to_old_version' => ReturnToOldVersionMiddleware::class,
+        'get_user_files' => GetUserFilesMiddleware::class,
+        'get_user_edited_files' => GetUserEditedFilesMiddleware::class,
 
     ];
 }
